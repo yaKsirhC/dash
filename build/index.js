@@ -13,7 +13,7 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
 app.use((0, cookie_parser_1.default)(process.env.COOKIE_SECRET));
-// app.use(cors({origin: "http://localhost:5173" , credentials: true}))
+// app.use(cors({origin: "" , credentials: true}))
 app.use(express_1.default.static("public"));
 // ACTUAL SERVER BELOW
 const forms_1 = __importDefault(require("./routes/forms"));
