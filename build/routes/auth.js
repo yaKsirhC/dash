@@ -63,13 +63,13 @@ router.post('/log-in', (req, res) => __awaiter(void 0, void 0, void 0, function*
         res.status(400).json(error);
     }
 }));
-router.post('/sign-up-t', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/sign-up-student', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (!req.body.password || !req.body.email)
             return res.sendStatus(400);
-        const match = yield schemas_1.User.findOne({ email: req.body.email });
+        const match = yield schemas_1.Student.findOne({ email: req.body.email });
         if (match) {
-            return res.status(419).json({ msg: "user created." });
+            return res.status(419).json({ msg: "Log in, Student already Registered" });
         }
         const salt = yield bcrypt_1.default.genSalt(10);
         const password = yield bcrypt_1.default.hash(req.body.password, salt);
@@ -77,7 +77,7 @@ router.post('/sign-up-t', (req, res) => __awaiter(void 0, void 0, void 0, functi
             email: req.body.email,
             password,
         };
-        const newUser = new schemas_1.User(creds);
+        const newUser = new schemas_1.Student(creds);
         yield newUser.save();
         return res.cookie('_T_', newUser.id, { httpOnly: false }).sendStatus(200);
     }
