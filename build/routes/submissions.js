@@ -15,14 +15,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const authorizer_1 = __importDefault(require("../authorizer"));
 const schemas_1 = require("../schemas");
+const crypto_1 = __importDefault(require("crypto"));
 const router = express_1.default.Router();
 router.post('/submit/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (!req.body.fid || !req.body.data || !req.body.aid)
             return res.status(400).json({ msg: "Incomplete Submission" });
+        const dataAll = JSON.parse(req.body.data);
+        if (req.files) {
+            Object.entries(req.files).forEach(file => {
+                const dataName = file[0].replace('data1[', '').replace(']', '');
+                const name = crypto_1.default.randomBytes(10).toString("hex") + '---' + file[1].name;
+                dataAll[dataName] = name;
+                file[1].mv('uploads/' + name);
+            });
+        }
         const now = new Date();
         const newSub = new schemas_1.Submission({
-            data: req.body.data,
+            data: dataAll,
             fid: req.body.fid,
             submittedOn: now,
             status: 0,
