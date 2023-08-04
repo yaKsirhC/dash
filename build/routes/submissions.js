@@ -43,8 +43,10 @@ const router = express_1.default.Router();
 router.post('/submit/', authorizer_1.commonAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        if (!req.body.fid || !req.body.data || !req.body.aid)
+        if (!req.body.fid || !req.body.data)
             return res.status(400).json({ msg: "Incomplete Submission" });
+        if (!req.body.aid)
+            return res.status(400).json({ msg: "No Agent referral" });
         const dataAll = JSON.parse(req.body.data);
         if (req.files) {
             Object.entries(req.files).forEach(file => {
@@ -56,12 +58,13 @@ router.post('/submit/', authorizer_1.commonAuth, (req, res) => __awaiter(void 0,
         }
         const submitee = (_a = yield schemas_1.Student.findById(req.cookies['_T_'])) !== null && _a !== void 0 ? _a : yield schemas_1.User.findById(req.cookies['_C_']);
         const now = new Date();
+        const agent = yield schemas_1.User.findOne({ agentToken: req.body.aid });
         const newSub = new schemas_1.Submission({
             data: dataAll,
             fid: req.body.fid,
             submittedOn: now,
             status: 0,
-            affiliate: req.body.aid,
+            affiliate: agent === null || agent === void 0 ? void 0 : agent.email,
             submitee: submitee === null || submitee === void 0 ? void 0 : submitee.email
         });
         yield newSub.save();
@@ -101,10 +104,11 @@ router.put('/change-stat', authorizer_1.default, (req, res) => __awaiter(void 0,
 }));
 router.get('/get', authorizer_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const all = yield schemas_1.Submission.find({}, "-__v");
+        const all = yield schemas_1.Submission.find({}, "-__v").sort('-submittedOn');
         const populated = yield Promise.all(all.map((sub) => __awaiter(void 0, void 0, void 0, function* () {
             const title = yield schemas_1.Form.findById(sub.fid, 'title');
-            return Object.assign(Object.assign({}, sub.toObject()), { fid: title === null || title === void 0 ? void 0 : title.title });
+            const aff = yield schemas_1.User.findOne({ agentToken: sub.affiliate }, 'name');
+            return Object.assign(Object.assign({}, sub.toObject()), { formTitle: title === null || title === void 0 ? void 0 : title.title, affiliate: sub.affiliate });
         })));
         res.json({ all: populated });
     }
