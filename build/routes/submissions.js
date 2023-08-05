@@ -75,6 +75,38 @@ router.post('/submit/', authorizer_1.commonAuth, (req, res) => __awaiter(void 0,
         res.sendStatus(500);
     }
 }));
+router.post('/submit-uc', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
+    try {
+        const submitee = (_b = yield schemas_1.Student.findById(req.cookies['_T_'])) !== null && _b !== void 0 ? _b : yield schemas_1.User.findById(req.cookies['_C_']);
+        const now = new Date();
+        if (yield schemas_1.Submission.find({ submitee: submitee === null || submitee === void 0 ? void 0 : submitee.email })) {
+            yield schemas_1.Submission.findOneAndUpdate({ submitee: submitee === null || submitee === void 0 ? void 0 : submitee.email }, {
+                data: req.body.data,
+                fid: "UC",
+                submittedOn: now,
+                status: 0,
+                // affiliate: agent?.email,
+                submitee: submitee === null || submitee === void 0 ? void 0 : submitee.email
+            });
+            return res.sendStatus(200);
+        }
+        const newSub = new schemas_1.Submission({
+            data: req.body.data,
+            fid: "UC",
+            submittedOn: now,
+            status: 0,
+            // affiliate: agent?.email,
+            submitee: submitee === null || submitee === void 0 ? void 0 : submitee.email
+        });
+        yield newSub.save();
+        res.sendStatus(200);
+    }
+    catch (error) {
+        console.error(error);
+        res.sendStatus(500);
+    }
+}));
 router.put('/change-stat', authorizer_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (!req.body.status || !req.body.sid)
@@ -106,11 +138,21 @@ router.get('/get', authorizer_1.default, (req, res) => __awaiter(void 0, void 0,
     try {
         const all = yield schemas_1.Submission.find({}, "-__v").sort('-submittedOn');
         const populated = yield Promise.all(all.map((sub) => __awaiter(void 0, void 0, void 0, function* () {
-            const title = yield schemas_1.Form.findById(sub.fid, 'title');
-            const aff = yield schemas_1.User.findOne({ agentToken: sub.affiliate }, 'name');
-            return Object.assign(Object.assign({}, sub.toObject()), { formTitle: title === null || title === void 0 ? void 0 : title.title, affiliate: sub.affiliate });
+            // const title = await Form.findById(sub.fid, 'title')
+            // const aff = await User.findOne({agentToken: sub.affiliate}, 'name')
+            return Object.assign(Object.assign({}, sub.toObject()), { formTitle: sub.fid });
         })));
         res.json({ all: populated });
+    }
+    catch (error) {
+        console.error(error);
+        res.sendStatus(500);
+    }
+}));
+router.get('/uc-submissions', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const all = yield schemas_1.Submission.find({ fid: 'UC' }).count();
+        return res.json({ all });
     }
     catch (error) {
         console.error(error);

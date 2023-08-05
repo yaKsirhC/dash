@@ -31,7 +31,7 @@ router.get("/request-token", (req, res) => __awaiter(void 0, void 0, void 0, fun
 }));
 router.get('/all', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const all = yield schemas_1.User.find({}, "-_id email name agentToken");
+        const all = yield schemas_1.User.find({}, "-_id email name");
         return res.json({ all });
     }
     catch (error) {
