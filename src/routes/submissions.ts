@@ -38,9 +38,12 @@ router.post('/submit/', commonAuth, async (req, res) => {
 	}
 })
 
-router.post('/submit-uc', async (req, res) => {
+router.post('/submit-uc', commonAuth ,async (req, res) => {
 	try {
 		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
+		const agentToken = req.body.agToken
+		if(!agentToken) return res.sendStatus(400)
+		const agent = await User.findOne({agentToken})
 		const now = new Date()
 		if (await Submission.find({ submitee: submitee?.email })) {
 			await Submission.findOneAndUpdate({ submitee: submitee?.email }, {
@@ -48,7 +51,7 @@ router.post('/submit-uc', async (req, res) => {
 				fid: "UC",
 				submittedOn: now,
 				status: 0,
-				// affiliate: agent?.email,
+				affiliate: agent?.email,
 				submitee: submitee?.email
 			})
 
@@ -59,7 +62,7 @@ router.post('/submit-uc', async (req, res) => {
 			fid: "UC",
 			submittedOn: now,
 			status: 0,
-			// affiliate: agent?.email,
+			affiliate: agent?.email,
 			submitee: submitee?.email
 		})
 
@@ -67,6 +70,17 @@ router.post('/submit-uc', async (req, res) => {
 		res.sendStatus(200)
 	} catch (error) {
 		console.error(error)
+		res.sendStatus(500)
+	}
+})
+
+router.get('/agent-monit', commonAuth ,async (req, res) => {
+	try {
+		const agentID = req.cookies['_C_']
+		if(!agentID) return res.sendStatus(400)
+		// const foundAgent = await 
+	} catch (error) {
+		console.error(error);
 		res.sendStatus(500)
 	}
 })
