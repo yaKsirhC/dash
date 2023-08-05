@@ -45,7 +45,8 @@ router.post('/submit-uc', commonAuth ,async (req, res) => {
 		if(!agentToken) return res.sendStatus(400)
 		const agent = await User.findOne({agentToken})
 		const now = new Date()
-		if (await Submission.find({ submitee: submitee?.email })) {
+		if ((await Submission.find({ submitee: submitee?.email })).length > 0) {
+			console.log('first')
 			await Submission.findOneAndUpdate({ submitee: submitee?.email }, {
 				data: req.body.data,
 				fid: "UC",
@@ -54,7 +55,7 @@ router.post('/submit-uc', commonAuth ,async (req, res) => {
 				affiliate: agent?.email,
 				submitee: submitee?.email
 			})
-
+			
 			return res.sendStatus(200)
 		}
 		const newSub = new Submission({
@@ -65,8 +66,8 @@ router.post('/submit-uc', commonAuth ,async (req, res) => {
 			affiliate: agent?.email,
 			submitee: submitee?.email
 		})
-
 		await newSub.save()
+
 		res.sendStatus(200)
 	} catch (error) {
 		console.error(error)
