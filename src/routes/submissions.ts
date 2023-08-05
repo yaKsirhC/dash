@@ -79,7 +79,9 @@ router.get('/agent-monit', commonAuth ,async (req, res) => {
 	try {
 		const agentID = req.cookies['_C_']
 		if(!agentID) return res.sendStatus(400)
-		// const foundAgent = await 
+		const foundAgent = await User.findById(agentID)
+		const foundSubmissions = await Submission.find({affiliate: foundAgent?.email}, 'submitee submittedOn')
+		return res.json({all: foundSubmissions});
 	} catch (error) {
 		console.error(error);
 		res.sendStatus(500)
