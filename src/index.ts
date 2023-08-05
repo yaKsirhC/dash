@@ -34,4 +34,4 @@ app.get('*', (req, res) => {
 });
 
 
-app.listen(8000, () => console.log('server running on 8k, while u just got caught on 4k.'))
+app.listen(process.env.PORT || 8000, () => console.log('server running on 8k, while u just got caught on 4k.'))
