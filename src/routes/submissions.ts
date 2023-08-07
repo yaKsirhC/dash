@@ -9,7 +9,7 @@ const router = express.Router()
 router.post('/submit/', commonAuth, async (req, res) => {
 	try {
 		if (!req.body.fid || !req.body.data) return res.status(400).json({ msg: "Incomplete Submission" })
-		if (!req.body.aid) return res.status(400).json({ msg: "No Agent referral" })
+		// if (!req.body.aid) return res.status(400).json({ msg: "No Agent referral" })
 		const dataAll = JSON.parse(req.body.data);
 		if (req.files) {
 			Object.entries(req.files as fileUpload.FileArray).forEach(file => {
@@ -21,13 +21,13 @@ router.post('/submit/', commonAuth, async (req, res) => {
 		}
 		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
 		const now = new Date()
-		const agent = await User.findOne({ agentToken: req.body.aid })
+		// const agent = await User.findOne({ agentToken: req.body.aid })
 		const newSub = new Submission({
 			data: dataAll,
 			fid: req.body.fid,
 			submittedOn: now,
 			status: 0,
-			affiliate: agent?.email,
+			affiliate: "agent?.email",
 			submitee: submitee?.email
 		})
 		await newSub.save()
@@ -40,19 +40,20 @@ router.post('/submit/', commonAuth, async (req, res) => {
 
 router.post('/submit-uc', commonAuth ,async (req, res) => {
 	try {
+		console.log(req.files)
+		if(!req.body.data) return res.sendStatus(400)
 		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
 		const agentToken = req.body.agToken
-		if(!agentToken) return res.sendStatus(400)
-		const agent = await User.findOne({agentToken})
+		// if(!agentToken) return res.sendStatus(400)
+		// const agent = await User.findOne({agentToken})
 		const now = new Date()
 		if ((await Submission.find({ submitee: submitee?.email })).length > 0) {
-			console.log('first')
 			await Submission.findOneAndUpdate({ submitee: submitee?.email }, {
 				data: req.body.data,
 				fid: "UC",
 				submittedOn: now,
 				status: 0,
-				affiliate: agent?.email,
+				affiliate: "agent?.email",
 				submitee: submitee?.email
 			})
 			
@@ -63,7 +64,7 @@ router.post('/submit-uc', commonAuth ,async (req, res) => {
 			fid: "UC",
 			submittedOn: now,
 			status: 0,
-			affiliate: agent?.email,
+			affiliate: "agent?.email",
 			submitee: submitee?.email
 		})
 		await newSub.save()
