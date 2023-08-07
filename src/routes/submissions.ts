@@ -1,8 +1,9 @@
 import express from "express"
 import adminAuth, { commonAuth } from "../authorizer"
-import { Form, Student, Submission, User } from "../schemas"
+import {  Student, Submission, User } from "../schemas"
 import fileUpload from "express-fileupload"
 import crypto from 'crypto'
+import path from "path"
 
 const router = express.Router()
 
@@ -40,31 +41,40 @@ router.post('/submit/', commonAuth, async (req, res) => {
 
 router.post('/submit-uc', commonAuth ,async (req, res) => {
 	try {
-		console.log(req.files)
-		if(!req.body.data) return res.sendStatus(400)
+		if(!req.body.stringd) return res.sendStatus(400)
+		const data = JSON.parse(req.body.stringd)
+
+		const passport = req.files?.["data[1][3][passport]"]
+		if(passport){
+			const name = crypto.randomBytes(10).toString("hex") + '---' + (passport as fileUpload.UploadedFile).name;
+			(passport as fileUpload.UploadedFile).mv('uploads/' + name)
+			data['1']['3']['passport'] = name;
+		}
+
+
 		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
 		const agentToken = req.body.agToken
-		// if(!agentToken) return res.sendStatus(400)
-		// const agent = await User.findOne({agentToken})
+		if(!agentToken) return res.sendStatus(400)
+		const agent = await User.findOne({agentToken})
 		const now = new Date()
 		if ((await Submission.find({ submitee: submitee?.email })).length > 0) {
 			await Submission.findOneAndUpdate({ submitee: submitee?.email }, {
-				data: req.body.data,
+				data: data,
 				fid: "UC",
 				submittedOn: now,
 				status: 0,
-				affiliate: "agent?.email",
+				affiliate: agent?.email,
 				submitee: submitee?.email
 			})
 			
 			return res.sendStatus(200)
 		}
 		const newSub = new Submission({
-			data: req.body.data,
+			data: data,
 			fid: "UC",
 			submittedOn: now,
 			status: 0,
-			affiliate: "agent?.email",
+			affiliate: agent?.email,
 			submitee: submitee?.email
 		})
 		await newSub.save()
@@ -129,6 +139,13 @@ router.get('/get', adminAuth, async (req, res) => {
 		console.error(error)
 		res.sendStatus(500)
 	}
+})
+
+router.get('/imgs/:name', async (req, res) => {
+	const name = req.params.name
+	if(!name) return res.sendStatus(400)
+
+	return res.sendFile(path.join(__dirname, '../../uploads/', name))
 })
 
 router.get('/uc-submissions', async (req, res) => {
