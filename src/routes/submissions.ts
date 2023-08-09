@@ -10,7 +10,7 @@ const router = express.Router()
 router.post('/submit/', commonAuth, async (req, res) => {
 	try {
 		if (!req.body.fid || !req.body.data) return res.status(400).json({ msg: "Incomplete Submission" })
-		// if (!req.body.aid) return res.status(400).json({ msg: "No Agent referral" })
+		if (!req.body.aid) return res.status(400).json({ msg: "No Agent referral" })
 		const dataAll = JSON.parse(req.body.data);
 		if (req.files) {
 			Object.entries(req.files as fileUpload.FileArray).forEach(file => {
@@ -22,13 +22,13 @@ router.post('/submit/', commonAuth, async (req, res) => {
 		}
 		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
 		const now = new Date()
-		// const agent = await User.findOne({ agentToken: req.body.aid })
+		const agent = await User.findOne({ agentToken: req.body.aid })
 		const newSub = new Submission({
 			data: dataAll,
 			fid: req.body.fid,
 			submittedOn: now,
 			status: 0,
-			affiliate: "agent?.email",
+			affiliate: agent?.email,
 			submitee: submitee?.email
 		})
 		await newSub.save()
@@ -41,20 +41,32 @@ router.post('/submit/', commonAuth, async (req, res) => {
 
 router.post('/submit-uc', commonAuth ,async (req, res) => {
 	try {
-		if(!req.body.stringd) return res.sendStatus(400)
-		const data = JSON.parse(req.body.stringd)
-
-		const passport = req.files?.["data[1][3][passport]"]
-		if(passport){
-			const name = crypto.randomBytes(10).toString("hex") + '---' + (passport as fileUpload.UploadedFile).name;
-			(passport as fileUpload.UploadedFile).mv('uploads/' + name)
-			data['1']['3']['passport'] = name;
-		}
-
-
-		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
 		const agentToken = req.body.agToken
 		if(!agentToken) return res.sendStatus(400)
+		if(!req.body.stringd) return res.sendStatus(400)
+		const data = JSON.parse(req.body.stringd)
+		// const passport = req.files?.["data[1][3][passport]"]
+		// const diploma = req.files?.['data[1][8][upload high school transcript and diploma]']
+		// if(diploma){
+		// 	const name = crypto.randomBytes(10).toString("hex") + '---' + (passport as fileUpload.UploadedFile).name;
+		// 	(passport as fileUpload.UploadedFile).mv('uploads/' + name)
+		// 	data['1']['8']['data[1][8][upload high school transcript and diploma]'] = name;
+		// }
+		// if(passport){
+		// 	const name = crypto.randomBytes(10).toString("hex") + '---' + (passport as fileUpload.UploadedFile).name;
+		// 	(passport as fileUpload.UploadedFile).mv('uploads/' + name)
+		// 	data['1']['3']['passport'] = name;
+		// }
+		if (req.files) {
+			Object.entries(req.files as fileUpload.FileArray).forEach(file => {
+				const dataName = file[0].replace('data1[', '').replace(']', '');
+				const name = crypto.randomBytes(10).toString("hex") + '---' + (file[1] as fileUpload.UploadedFile).name;
+				data[dataName] = name;
+				(file[1] as any).mv('uploads/' + name)
+			})
+		}
+
+		const submitee = await Student.findById(req.cookies['_T_']) ?? await User.findById(req.cookies['_C_'])
 		const agent = await User.findOne({agentToken})
 		const now = new Date()
 		if ((await Submission.find({ submitee: submitee?.email })).length > 0) {
