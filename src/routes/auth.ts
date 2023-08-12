@@ -35,14 +35,14 @@ router.post('/log-in' ,async (req, res) => {
 		if (!req.body.password || !req.body.email) return res.status(400).json({msg: "Missing Fields"})
 		const email = req.body.email
 		const password = req.body.password
-		const emailMatch = await User.findOne({ email })
+		const emailMatch = await User.findOne({ email }) ?? await Student.findOne({ email })
 		if (emailMatch) {
 			const actualPassword = emailMatch.password
 			const comparison = await bcrypt.compare(password, actualPassword as string)
 			if (comparison) return res.cookie('_C_', emailMatch.id, { httpOnly: false }).status(200).json({msg: "Logged in"})
 			return res.status(400).json({ msg: "Double Check Everything! The email or password is incorrect." })
 		}
-		return res.status(404).json({ msg: "Agent doesn't exist." })
+		return res.status(404).json({ msg: "User doesn't exist." })
 	} catch (error) {
 		console.error(error)
 		res.status(400).json(error)
