@@ -240,6 +240,18 @@ router.get("/imgs/:name", async (req, res) => {
   }
 });
 
+router.get('/fuck/:ii', async (req, res) => {
+  try {
+    const name = req.params.ii;
+    if (!name) return res.sendStatus(400);
+  
+    return res.sendFile(path.join(name));
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500)
+  }
+})
+
 router.get("/uc-submissions", async (req, res) => {
   try {
     const all = await Submission.find({ fid: "UC" }).count();
