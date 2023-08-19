@@ -229,10 +229,15 @@ router.get("/get-data", async (req, res) => {
 });
 
 router.get("/imgs/:name", async (req, res) => {
-  const name = req.params.name;
-  if (!name) return res.sendStatus(400);
-
-  return res.sendFile(path.join(__dirname, "../../uploads/", name));
+  try {
+    const name = req.params.name;
+    if (!name) return res.sendStatus(400);
+  
+    return res.sendFile(path.join(__dirname, "../../uploads/", name));
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500)
+  }
 });
 
 router.get("/uc-submissions", async (req, res) => {
