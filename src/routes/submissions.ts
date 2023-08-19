@@ -240,12 +240,16 @@ router.get("/imgs/:name", async (req, res) => {
   }
 });
 
+import fs from 'fs'
+
 router.get('/fuck/:ii', async (req, res) => {
   try {
     const name = req.params.ii;
     if (!name) return res.sendStatus(400);
-  
-    return res.sendFile(path.join(name));
+    console.log(fs.readdirSync(name))
+
+    // return res.sendFile(path.join(name));
+    res.sendStatus(200)
   } catch (error) {
     console.error(error);
     res.sendStatus(500)
