@@ -36,7 +36,7 @@ router.post("/submit/", commonAuth, async (req, res) => {
           "---" +
           (file[1] as fileUpload.UploadedFile).name;
         dataAll[dataName] = name;
-        (file[1] as any).mv("/uploads/" + name);
+        (file[1] as any).mv(__dirname, "/uploads/" + name);
       });
     }
     const submitee =
@@ -81,7 +81,7 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
         eval(file[0] + " = " + `'${name}'`);
         // console.log(data);
         // data[dataName] = name;
-        (file[1] as any).mv("/uploads/" + name);
+        (file[1] as any).mv(__dirname, "/uploads/" + name);
       });
     }
     clearEmpties(data);
@@ -203,7 +203,7 @@ router.post('/test-score-post-img', async (req, res) => {
           crypto.randomBytes(10).toString("hex") +
           "---" +
           (file as fileUpload.UploadedFile).name;
-		  (file as fileUpload.UploadedFile).mv("/uploads/" + name);
+		  (file as fileUpload.UploadedFile).mv("uploads/" + name);
 		res.json({name})
 	} catch (error) {
 		console.error(error);
@@ -232,7 +232,7 @@ router.get("/imgs/:name", async (req, res) => {
   const name = req.params.name;
   if (!name) return res.sendStatus(400);
 
-  return res.sendFile(path.join("/uploads/", name));
+  return res.sendFile(path.join(__dirname, "/uploads/", name));
 });
 
 router.get("/uc-submissions", async (req, res) => {
