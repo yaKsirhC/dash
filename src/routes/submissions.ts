@@ -92,12 +92,12 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
     const now = new Date();
     const found = await Submission.findOne({ submitee: submitee?.email });
     if (found) {
-      if (!data["1"]["3"]) {
+      if (found.data["1"]["3"] && found.data["1"]["3"]["passport"] && !data["1"]["3"]) {
         data["1"]["3"] = {
           passport: found.data["1"]["3"]["passport"],
         };
       }
-      if (!data["1"]["8"]["upload high school transcript and diploma"]) {
+      if (found.data["1"]["8"] && found.data["1"]["8"]["upload high school transcript and diploma"] && !data["1"]["8"]["upload high school transcript and diploma"]) {
         data["1"]["8"]["upload high school transcript and diploma"] =
           found.data["1"]["8"]["upload high school transcript and diploma"];
       }
