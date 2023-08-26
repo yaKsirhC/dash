@@ -65,7 +65,7 @@ router.post("/submit/", commonAuth, async (req, res) => {
 router.post("/submit-uc", commonAuth, async (req, res) => {
   try {
     const agentToken = req.body.agToken;
-    if (!agentToken) return res.sendStatus(400);
+    if (!agentToken) return res.send("No referee on suubmition");
     if (!req.body.stringd) return res.sendStatus(400);
     const data = JSON.parse(req.body.stringd);
     if (req.files) {
@@ -89,6 +89,7 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
       (await Student.findById(req.cookies["_T_"])) ??
       (await User.findById(req.cookies["_C_"]));
     const agent = await User.findOne({ agentToken });
+    if(!agent) return res.send("Referral Link doesn't exist")
     const now = new Date();
     const found = await Submission.findOne({ submitee: submitee?.email });
     if (found) {
