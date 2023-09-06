@@ -35,7 +35,7 @@ router.post('/log-in' ,async (req, res) => {
 		if (!req.body.password || !req.body.email) return res.status(400).json({msg: "Missing Fields"})
 		const email = req.body.email
 		const password = req.body.password
-		const emailMatch = await User.findOne({ email }) ?? await Student.findOne({ email })
+		const emailMatch = await User.findOne({ email }) ?? await Student.findOne({ username: email })
 		if (emailMatch) {
 			const actualPassword = emailMatch.password
 			const comparison = await bcrypt.compare(password, actualPassword as string)
@@ -51,15 +51,15 @@ router.post('/log-in' ,async (req, res) => {
 
 router.post('/sign-up-student', async (req, res) => {
 	try {
-		if (!req.body.password || !req.body.email) return res.sendStatus(400)
-		const match = await Student.findOne({ email: req.body.email })
+		if (!req.body.password || !req.body.username) return res.sendStatus(400)
+		const match = await Student.findOne({ username: req.body.username })
 		if (match) {
 			return res.status(419).json({msg: "Log in, Student already Registered"})
 		}
 		const salt = await bcrypt.genSalt(10)
 		const password = await bcrypt.hash(req.body.password, salt)
 		const creds = {
-			email: req.body.email,
+			username: req.body.username,
 			password,
 		}
 		const newUser = new Student(creds)

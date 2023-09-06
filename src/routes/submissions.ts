@@ -50,7 +50,7 @@ router.post("/submit/", commonAuth, async (req, res) => {
       submittedOn: now,
       status: 0,
       affiliate: agent?.email,
-      submitee: submitee?.email,
+      submitee: submitee?.username,
     });
     await newSub.save();
     res.json({
@@ -91,7 +91,7 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
     const agent = await User.findOne({ agentToken });
     if(!agent) return res.send("Referral Link doesn't exist")
     const now = new Date();
-    const found = await Submission.findOne({ submitee: submitee?.email });
+    const found = await Submission.findOne({ submitee: submitee?.username });
     if (found) {
       if (found.data["1"]["3"] && found.data["1"]["3"]["passport"] && !data["1"]["3"]) {
         data["1"]["3"] = {
@@ -103,14 +103,14 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
           found.data["1"]["8"]["upload high school transcript and diploma"];
       }
       await Submission.findOneAndUpdate(
-        { submitee: submitee?.email },
+        { submitee: submitee?.username },
         {
           data: data,
           fid: "UC",
           submittedOn: now,
           status: 0,
           affiliate: agent?.email,
-          submitee: submitee?.email,
+          submitee: submitee?.username,
         }
       );
 
@@ -122,7 +122,7 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
       submittedOn: now,
       status: 0,
       affiliate: agent?.email,
-      submitee: submitee?.email,
+      submitee: submitee?.username,
     });
     await newSub.save();
 
@@ -233,8 +233,10 @@ router.get("/imgs/:name", async (req, res) => {
   try {
     const name = req.params.name;
     if (!name) return res.sendStatus(400);
-  
-    return res.sendFile(path.join("/uploads/", name));
+    if(fs.existsSync(path.join("/uploads/", name))){
+      return res.sendFile(path.join("/uploads/", name));
+    }
+    return res.sendStatus(404)
   } catch (error) {
     console.error(error);
     res.sendStatus(500)
@@ -267,5 +269,21 @@ router.get("/uc-submissions", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+router.delete('/delete', async (req, res) => {
+  const id = req.query.id
+  console.log(id)
+  if(!id) return res.sendStatus(400)
+  await Submission.findByIdAndDelete(id)
+  const all = await Submission.find({})
+  const populated = await Promise.all(
+    all.map(async (sub) => {
+      // const title = await Form.findById(sub.fid, 'title')
+      // const aff = await User.findOne({agentToken: sub.affiliate}, 'name')
+      return { ...sub.toObject(), formTitle: sub.fid };
+    })
+  );
+  res.json({ all: populated });
+})
 
 export default router;
