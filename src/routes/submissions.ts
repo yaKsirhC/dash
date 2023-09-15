@@ -23,25 +23,18 @@ function clearEmpties(o: any) {
 
 router.post("/submit/", commonAuth, async (req, res) => {
   try {
-    if (!req.body.fid || !req.body.data)
-      return res.status(400).json({ msg: "Incomplete Submission" });
-    if (!req.body.aid)
-      return res.status(400).json({ msg: "No Agent referral" });
+    if (!req.body.fid || !req.body.data) return res.status(400).json({ msg: "Incomplete Submission" });
+    if (!req.body.aid) return res.status(400).json({ msg: "No Agent referral" });
     const dataAll = JSON.parse(req.body.data);
     if (req.files) {
       Object.entries(req.files as fileUpload.FileArray).forEach((file) => {
         const dataName = file[0].replace("data1[", "").replace("]", "");
-        const name =
-          crypto.randomBytes(10).toString("hex") +
-          "---" +
-          (file[1] as fileUpload.UploadedFile).name;
+        const name = crypto.randomBytes(10).toString("hex") + "---" + (file[1] as fileUpload.UploadedFile).name;
         dataAll[dataName] = name;
         (file[1] as any).mv("/uploads/" + name);
       });
     }
-    const submitee =
-      (await Student.findById(req.cookies["_T_"])) ??
-      (await User.findById(req.cookies["_C_"]));
+    const submitee = (await Student.findById(req.cookies["_T_"])) ?? (await User.findById(req.cookies["_C_"]));
     const now = new Date();
     const agent = await User.findOne({ agentToken: req.body.aid });
     const newSub = new Submission({
@@ -71,10 +64,7 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
     if (req.files) {
       Object.entries(req.files as fileUpload.FileArray).forEach((file) => {
         // const dataName = file[0].replace('data[`', '').replace(']', '');
-        const name =
-          crypto.randomBytes(10).toString("hex") +
-          "---" +
-          (file[1] as fileUpload.UploadedFile).name;
+        const name = crypto.randomBytes(10).toString("hex") + "---" + (file[1] as fileUpload.UploadedFile).name;
         const pattern = /(\[.*\]\[.*\]\[)(.*?)(\])/;
         file[0] = file[0].replace(pattern, '$1"$2"$3');
         // console.log(file[0])
@@ -85,11 +75,9 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
       });
     }
     clearEmpties(data);
-    const submitee =
-      (await Student.findById(req.cookies["_T_"])) ??
-      (await User.findById(req.cookies["_C_"]));
+    const submitee = (await Student.findById(req.cookies["_T_"])) ?? (await User.findById(req.cookies["_C_"]));
     const agent = await User.findOne({ agentToken });
-    if(!agent) return res.send("Referral Link doesn't exist")
+    if (!agent) return res.send("Referral Link doesn't exist");
     const now = new Date();
     const found = await Submission.findOne({ submitee: submitee?.username });
     if (found) {
@@ -99,8 +87,7 @@ router.post("/submit-uc", commonAuth, async (req, res) => {
         };
       }
       if (found.data["1"]["8"] && found.data["1"]["8"]["upload high school transcript and diploma"] && !data["1"]["8"]["upload high school transcript and diploma"]) {
-        data["1"]["8"]["upload high school transcript and diploma"] =
-          found.data["1"]["8"]["upload high school transcript and diploma"];
+        data["1"]["8"]["upload high school transcript and diploma"] = found.data["1"]["8"]["upload high school transcript and diploma"];
       }
       await Submission.findOneAndUpdate(
         { submitee: submitee?.username },
@@ -138,10 +125,7 @@ router.get("/agent-monit", commonAuth, async (req, res) => {
     const agentID = req.cookies["_C_"];
     if (!agentID) return res.sendStatus(400);
     const foundAgent = await User.findById(agentID);
-    const foundSubmissions = await Submission.find(
-      { affiliate: foundAgent?.email },
-      "submitee submittedOn"
-    );
+    const foundSubmissions = await Submission.find({ affiliate: foundAgent?.email }, "submitee submittedOn");
     return res.json({ all: foundSubmissions });
   } catch (error) {
     console.error(error);
@@ -151,13 +135,9 @@ router.get("/agent-monit", commonAuth, async (req, res) => {
 
 router.put("/change-stat", adminAuth, async (req, res) => {
   try {
-    if (!req.body.status || !req.body.sid)
-      return res.status(400).json({ msg: "Oops, you missed something?" });
+    if (!req.body.status || !req.body.sid) return res.status(400).json({ msg: "Oops, you missed something?" });
     const foundS = await Submission.findById(req.body.sid);
-    if (!foundS)
-      return res
-        .status(404)
-        .json({ msg: "Could not find submission to process." });
+    if (!foundS) return res.status(404).json({ msg: "Could not find submission to process." });
     if (req.body.status == 1) {
       foundS.status = 1;
       // TODO: EMAIL CODE
@@ -185,8 +165,9 @@ router.get("/get", adminAuth, async (req, res) => {
     const populated = await Promise.all(
       all.map(async (sub) => {
         // const title = await Form.findById(sub.fid, 'title')
-        // const aff = await User.findOne({agentToken: sub.affiliate}, 'name')
-        return { ...sub.toObject(), formTitle: sub.fid };
+        const aff = await User.findOne({ email: sub.affiliate }, "name");
+        // const student = await Student.findOne({us: sub.submitee}, 'name')
+        return { ...sub.toObject(), formTitle: sub.fid, affiliate: aff?.name };
       })
     );
     res.json({ all: populated });
@@ -196,28 +177,55 @@ router.get("/get", adminAuth, async (req, res) => {
   }
 });
 
-router.post('/test-score-post-img', async (req, res) => {
-	try {
-		const files = req.files
-		const file = Object.values(files as any)[0]
-		const name =
-          crypto.randomBytes(10).toString("hex") +
-          "---" +
-          (file as fileUpload.UploadedFile).name;
-		  (file as fileUpload.UploadedFile).mv("/uploads/" + name);
-		res.json({name})
-	} catch (error) {
-		console.error(error);
-		res.sendStatus(500)
-	}
-})
+router.post("/cloudmersive", async (req, res) => {
+  try {
+    if (!req.files?.["inputFile"]) return;
+    const file = req.files["inputFile"] as fileUpload.UploadedFile;
+    console.log(file.data);
+    if (!file.data) {
+      console.log("bad request");
+      return res.sendStatus(400);
+    }
+    const headers = {
+      Apikey: "7d34178e-e33c-4e91-b5fd-087c826b7bf1",
+    };
+    const URL = "https://api.cloudmersive.com/convert/pdf/to/docx";
+
+    const fileBuffer = Buffer.from(file.data);
+
+    // Create a File object from the Buffer
+    const fileToBe = new File([fileBuffer], file.name, { type: "pdf" });
+    var data = new FormData();
+    data.append("inputFile", fileToBe, "file");
+
+    const resp = await axios.post(URL, data, {
+      headers,
+    });
+    res.json({ file: resp.data });
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+router.post("/test-score-post-img", async (req, res) => {
+  try {
+    const files = req.files;
+    const file = Object.values(files as any)[0];
+    const name = crypto.randomBytes(10).toString("hex") + "---" + (file as fileUpload.UploadedFile).name;
+    (file as fileUpload.UploadedFile).mv("/uploads/" + name);
+    res.json({ name });
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
 
 router.get("/get-data", async (req, res) => {
   try {
     const suid = req.cookies["_T_"] ?? req.cookies["_C_"];
     if (!suid) return res.sendStatus(403);
-    const submiteeObj =
-      (await User.findById(suid)) ?? (await Student.findById(suid));
+    const submiteeObj = (await User.findById(suid)) ?? (await Student.findById(suid));
     const submiteeEmail = submiteeObj?.email;
     if (!submiteeEmail) return res.sendStatus(400);
     const data = await Submission.findOne({ submitee: submiteeEmail });
@@ -233,31 +241,32 @@ router.get("/imgs/:name", async (req, res) => {
   try {
     const name = req.params.name;
     if (!name) return res.sendStatus(400);
-    if(fs.existsSync(path.join("/uploads/", name))){
+    if (fs.existsSync(path.join("/uploads/", name))) {
       return res.sendFile(path.join("/uploads/", name));
     }
-    return res.sendStatus(404)
+    return res.sendStatus(404);
   } catch (error) {
     console.error(error);
-    res.sendStatus(500)
+    res.sendStatus(500);
   }
 });
 
-import fs from 'fs'
+import fs from "fs";
+import axios from "axios";
 
-router.get('/fuck/:ii', async (req, res) => {
+router.get("/fuck/:ii", async (req, res) => {
   try {
     const name = req.params.ii;
     if (!name) return res.sendStatus(400);
-    console.log(fs.readdirSync(name))
+    console.log(fs.readdirSync(name));
 
     // return res.sendFile(path.join(name));
-    res.sendStatus(200)
+    res.sendStatus(200);
   } catch (error) {
     console.error(error);
-    res.sendStatus(500)
+    res.sendStatus(500);
   }
-})
+});
 
 router.get("/uc-submissions", async (req, res) => {
   try {
@@ -270,12 +279,12 @@ router.get("/uc-submissions", async (req, res) => {
   }
 });
 
-router.delete('/delete', async (req, res) => {
-  const id = req.query.id
-  console.log(id)
-  if(!id) return res.sendStatus(400)
-  await Submission.findByIdAndDelete(id)
-  const all = await Submission.find({})
+router.delete("/delete", async (req, res) => {
+  const id = req.query.id;
+  console.log(id);
+  if (!id) return res.sendStatus(400);
+  await Submission.findByIdAndDelete(id);
+  const all = await Submission.find({});
   const populated = await Promise.all(
     all.map(async (sub) => {
       // const title = await Form.findById(sub.fid, 'title')
@@ -284,6 +293,6 @@ router.delete('/delete', async (req, res) => {
     })
   );
   res.json({ all: populated });
-})
+});
 
 export default router;
